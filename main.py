@@ -1,4 +1,4 @@
-from machine import mem32, ADC, Pin, PWM 
+from machine import mem32, ADC, Pin, PWM, duty 
 import time
 
 
@@ -83,15 +83,18 @@ def mostrar_numero(num):
     dec = num // 10
     uni = num % 10
 
+    valor = valor_pot.read()
+    valor_duty = int((valor / 4095) * 1023) #esto lo hacemos para escalar 
+
     # DECENAS
-    disp_dec.duty(VALORPOT)
+    disp_dec.duty(valor_duty)
     disp_uni.duty(0)
     set_segments(DIGITOS[dec])
     time.sleep_ms(5)
 
     # UNIDADES
     disp_dec.duty(0)
-    disp_uni.duty(VALORPOT)
+    disp_uni.duty(valor_duty)
     set_segments(DIGITOS[uni])
     time.sleep_ms(5)
 
@@ -104,8 +107,6 @@ def contador_peatonal(segundos):
         while time.time() - inicio < 1:
 
             mostrar_numero(i)
-
-
 
 #-----------------------------------------
 
@@ -122,6 +123,10 @@ boton = Pin(39, Pin.IN, Pin.PULL_DOWN)
 boton.irq(trigger=Pin.IRQ_FALLING, handler=ISR_boton)
 
 #potenciometro
+valor_pot = ADC(Pin(35))
+valor_pot.atten(ADC.ATTN_11DB)
+valor_pot.width(ADC.WIDTH_12BIT)
+
 #VALORPOT=  queda pendiente esta parte del poitemciometro
 GPIO_ENABLE = 0x3FF44020
 GPIO_OUT = 0x3FF44004
@@ -149,8 +154,8 @@ g = Pin(4, Pin.OUT)
 
 segments = [a,b,c,d,e,f,g]
 
-disp_dec = PWM(5, Pin.OUT)
-disp_uni = PWM(0, Pin.OUT)
+disp_dec = PWM(Pin(5), freq=1000)
+disp_uni = PWM(Pin(0), freq=1000)
 
 
 mem32[GPIO_ENABLE] |= (
