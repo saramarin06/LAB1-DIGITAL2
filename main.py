@@ -83,15 +83,15 @@ def mostrar_numero(num):
     dec = num // 10
     uni = num % 10
 
-    # DECENAS
-    disp_dec.duty(VALORPOT)
-    disp_uni.duty(0)
+    #descenas
+    disp_dec.on()
+    disp_uni.off()
     set_segments(DIGITOS[dec])
     time.sleep_ms(5)
 
     # UNIDADES
-    disp_dec.duty(0)
-    disp_uni.duty(VALORPOT)
+    disp_dec.on()
+    disp_uni.off()
     set_segments(DIGITOS[uni])
     time.sleep_ms(5)
 
@@ -149,8 +149,8 @@ g = Pin(4, Pin.OUT)
 
 segments = [a,b,c,d,e,f,g]
 
-disp_dec = PWM(5, Pin.OUT)
-disp_uni = PWM(0, Pin.OUT)
+disp_dec =  Pin(5, Pin.OUT)
+disp_uni =  Pin(0, Pin.OUT)
 
 
 mem32[GPIO_ENABLE] |= (
@@ -236,4 +236,3 @@ while True:
             cruce_peatonal()
             boton_peaton = False
             continue
-
