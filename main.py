@@ -90,8 +90,8 @@ def mostrar_numero(num):
     time.sleep_ms(5)
 
     # UNIDADES
-    disp_dec.on()
-    disp_uni.off()
+    disp_dec.off()
+    disp_uni.on()
     set_segments(DIGITOS[uni])
     time.sleep_ms(5)
 
