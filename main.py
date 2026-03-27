@@ -1,5 +1,22 @@
-from machine import mem32, ADC, Pin, PWM 
-import time
+from machine import mem32, ADC, Pin, DAC, TouchPad
+import time, match
+
+
+# Definición de frecuencias (Notas)
+NOTAS = {
+    'C4': 261, 'D4': 293, 'E4': 329, 'F4': 349, 'G4': 392, 'A4': 440, 'B4': 493, 'C5': 523, 'OFF': 0
+}
+
+# Ejemplo de melodía: [nota, duración_ms]
+MELODIA = [
+    ['C4', 500], ['G4', 500], ['F4', 125], ['E4', 125], ['D4', 125], ['C5', 500]
+]
+
+# Configurar DAC en el pin 25 (según el PDF)
+dac = DAC(Pin(25)) 
+# Configurar Touch en el pin 32 (recomendado en el PDF)
+sensor_touch = TouchPad(Pin(32))
+
 
 
 #FUNCIONES SEMAFORO 
@@ -83,15 +100,15 @@ def mostrar_numero(num):
     dec = num // 10
     uni = num % 10
 
-    # DECENAS
-    disp_dec.duty(VALORPOT)
-    disp_uni.duty(0)
+    #descenas
+    disp_dec.on()
+    disp_uni.off()
     set_segments(DIGITOS[dec])
     time.sleep_ms(5)
 
     # UNIDADES
-    disp_dec.duty(0)
-    disp_uni.duty(VALORPOT)
+    disp_dec.on()
+    disp_uni.off()
     set_segments(DIGITOS[uni])
     time.sleep_ms(5)
 
@@ -104,6 +121,32 @@ def contador_peatonal(segundos):
         while time.time() - inicio < 1:
 
             mostrar_numero(i)
+
+
+#funciones paara generar el tono
+def tocar_nota(frecuencia, duracion_ms):
+    if frecuencia == 0:
+        dac.write(0)
+        time.sleep_ms(duracion_ms)
+        return
+
+    # Generar onda cuadrada simple
+    periodo_us = int(1000000 / frecuencia)
+    medio_periodo = int(periodo_us / 2)
+    ciclos = int((duracion_ms * 1000) / periodo_us)
+
+    for _ in range(ciclos):
+        dac.write(255) # Nivel alto
+        time.sleep_us(medio_periodo)
+        dac.write(0)   # Nivel bajo
+        time.sleep_us(medio_periodo)
+
+def reproducir_melodia():
+    print("Reproduciendo melodía...")
+    for nota, duracion in MELODIA:
+        tocar_nota(NOTAS[nota], duracion)
+        time.sleep_ms(50) # Breve pausa entre notas
+    dac.write(0) # Silencio al final
 
 
 
@@ -149,8 +192,8 @@ g = Pin(4, Pin.OUT)
 
 segments = [a,b,c,d,e,f,g]
 
-disp_dec = PWM(5, Pin.OUT)
-disp_uni = PWM(0, Pin.OUT)
+disp_dec =  Pin(5, Pin.OUT)
+disp_uni =  Pin(0, Pin.OUT)
 
 
 mem32[GPIO_ENABLE] |= (
@@ -237,3 +280,8 @@ while True:
             boton_peaton = False
             continue
 
+    # Lectura del sensor Touch (ajusta el umbral según tus pruebas, suele ser < 200 cuando se toca)
+    if sensor_touch.read() < 200: 
+        reproducir_melodia()
+        # Una vez terminada, el PDF dice que debe poder regresar al vúmetro 
+        time.sleep(1) # Anti-rebote simple
